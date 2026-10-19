@@ -84,7 +84,7 @@ struct RuleTestView: View {
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
-                    ForEach(samples, id: .self) { s in
+                    ForEach(samples, id: \.self) { s in
                         Button(s) { input = s; runTest() }
                             .font(.caption)
                             .padding(.horizontal, 12).padding(.vertical, 7)

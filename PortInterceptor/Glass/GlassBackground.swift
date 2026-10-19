@@ -14,34 +14,35 @@ struct GlassBackground: View {
             LinearGradient(colors: [Color(red: 0.05, green: 0.07, blue: 0.12),
                                     Color(red: 0.02, green: 0.03, blue: 0.06)],
                            startPoint: .top, endPoint: .bottom)
-            // 彩色光斑
-            blob(LinearGradient(colors: [Color(red: 0.20, green: 0.55, blue: 1.0),
-                                         Color(red: 0.35, green: 0.3, blue: 1.0)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing)
+
+            // 彩色光斑（直接内联，避免类型推断问题）
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 0.20, green: 0.55, blue: 1.0),
+                                             Color(red: 0.35, green: 0.3, blue: 1.0)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing))
                 .frame(width: 340, height: 340)
                 .offset(x: animate ? -120 : -160, y: animate ? -260 : -300)
-            )
 
-            blob(LinearGradient(colors: [Color(red: 0.2, green: 0.9, blue: 0.85),
-                                         Color(red: 0.1, green: 0.5, blue: 0.9)],
-                                startPoint: .top, endPoint: .bottom)
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 0.2, green: 0.9, blue: 0.85),
+                                             Color(red: 0.1, green: 0.5, blue: 0.9)],
+                                    startPoint: .top, endPoint: .bottom))
                 .frame(width: 300, height: 300)
                 .offset(x: animate ? 150 : 120, y: animate ? -180 : -140)
-            )
 
-            blob(LinearGradient(colors: [Color(red: 1.0, green: 0.35, blue: 0.7),
-                                         Color(red: 0.7, green: 0.3, blue: 1.0)],
-                                startPoint: .leading, endPoint: .trailing)
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 1.0, green: 0.35, blue: 0.7),
+                                             Color(red: 0.7, green: 0.3, blue: 1.0)],
+                                    startPoint: .leading, endPoint: .trailing))
                 .frame(width: 320, height: 320)
                 .offset(x: animate ? 60 : 100, y: animate ? 320 : 280)
-            )
 
-            blob(LinearGradient(colors: [Color(red: 0.4, green: 0.8, blue: 1.0),
-                                         Color(red: 0.3, green: 0.5, blue: 1.0)],
-                                startPoint: .bottom, endPoint: .top)
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 0.4, green: 0.8, blue: 1.0),
+                                             Color(red: 0.3, green: 0.5, blue: 1.0)],
+                                    startPoint: .bottom, endPoint: .top))
                 .frame(width: 260, height: 260)
                 .offset(x: animate ? -160 : -120, y: animate ? 260 : 300)
-            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .blur(radius: 90)
@@ -51,10 +52,6 @@ struct GlassBackground: View {
             }
         }
         .ignoresSafeArea()
-    }
-
-    private func blob(_ gradient: LinearGradient) -> some View {
-        Circle().fill(gradient)
     }
 }
 

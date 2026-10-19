@@ -142,7 +142,7 @@ public final class LocalProxyServer: @unchecked Sendable {
 
         switch decision {
         case .blocked:
-            sendBlockedHTTP(client, host: cleanedHost)
+            sendBlockedHTTP(client: client, host: cleanedHost)
         case .direct, .proxied:
             let remote = NWConnection(host: NWEndpoint.Host(cleanedHost),
                                       port: port, using: .tcp)

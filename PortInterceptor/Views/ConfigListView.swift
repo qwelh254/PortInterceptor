@@ -19,25 +19,7 @@ struct ConfigListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(store.configs) { config in
-                        NavigationLink {
-                            ConfigDetailView(config: config)
-                        } label: {
-                            ConfigCard(config: config,
-                                       selected: store.selectedConfigID == config.id)
-                        }
-                        .buttonStyle(.plain)
-                        .simultaneousGesture(TapGesture().onEnded {
-                            store.select(config.id)
-                        })
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                if let idx = store.configs.firstIndex(where: { $0.id == config.id }) {
-                                    store.remove(at: IndexSet(integer: idx))
-                                }
-                            } label: {
-                                Label("删除配置", systemImage: "trash")
-                            }
-                        }
+                        configRow(config)
                     }
                     if store.configs.isEmpty { emptyHint }
                 }
@@ -69,6 +51,30 @@ struct ConfigListView: View {
                         .clipShape(Capsule())
                         .padding(.top, 64)
                 }
+            }
+        }
+    }
+
+    // MARK: - 单个配置行
+    @ViewBuilder
+    private func configRow(_ config: ProxyConfig) -> some View {
+        NavigationLink {
+            ConfigDetailView(config: config)
+        } label: {
+            ConfigCard(config: config,
+                       selected: store.selectedConfigID == config.id)
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded {
+            store.select(config.id)
+        })
+        .contextMenu {
+            Button(role: .destructive) {
+                if let idx = store.configs.firstIndex(where: { $0.id == config.id }) {
+                    store.remove(at: IndexSet(integer: idx))
+                }
+            } label: {
+                Label("删除配置", systemImage: "trash")
             }
         }
     }
@@ -163,7 +169,7 @@ struct ConfigListView: View {
 // MARK: - 配置玻璃卡片
 struct ConfigCard: View {
     let config: ProxyConfig
-    let selected: bool
+    let selected: Bool
 
     var body: some View {
         HStack(spacing: 12) {

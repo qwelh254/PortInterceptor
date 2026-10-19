@@ -35,7 +35,7 @@ public final class TunnelManager: NSObject, ObservableObject {
         state = .connecting
         Task {
             do {
-                let managers = try await NETunnelProviderManager.loadAllManagers()
+                let managers = try await NETunnelProviderManager.loadAllFromPreferences()
                 let manager = managers.first ?? NETunnelProviderManager()
 
                 let proto = NETunnelProviderProtocol()
