@@ -1,0 +1,34 @@
+name: PortInterceptor
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+# Yams 是一个 Swift 的 YAML 解析库，用于解析 Clash 配置
+# 首次打开工程时 Xcode 会自动联网下载，无需手动安装
+packages:
+  Yams:
+    url: https://github.com/jpsim/Yams.git
+    from: 5.1.3
+
+targets:
+  PortInterceptor:
+    type: application
+    platform: iOS
+    sources:
+      - path: PortInterceptor
+    dependencies:
+      - package: Yams
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.PortInterceptor
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"

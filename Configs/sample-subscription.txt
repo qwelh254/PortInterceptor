@@ -1,0 +1,4 @@
+ss://YWVzLTI1Ni1nY206eW91ci1wYXNzd29yZA==@hk.example.com:8388#香港-示例01
+vmess://eyJ2IjoiMiIsInBzIjoi5pel5pysLeekuuS+izAyIiwiYWRkIjoianAuZXhhbXBsZS5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiIxMjM0NTY3OC0xMjM0LTEyMzQtMTIzNC0xMjM0NTY3ODlhYmMiLCJhaWQiOiIwIiwic2N5IjoiYXV0byIsIm5ldCI6IndzIiwidHlwZSI6Im5vbmUiLCJob3N0IjoianAuZXhhbXBsZS5jb20iLCJwYXRoIjoiL3JheSIsInRscyI6InRscyJ9
+trojan://your-password@us.example.com:443?sni=us.example.com#美国-示例03
+socks5://user:pass@socks.example.com:1080#SOCKS5示例

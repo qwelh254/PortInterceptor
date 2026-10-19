@@ -1,0 +1,63 @@
+name: Build IPA
+
+# 触发方式：推送到 main 分支，或在 Actions 页面手动点 Run workflow
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 定位工程目录
+        id: loc
+        run: |
+          if [ -f project.yml ]; then
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          elif [ -f PortInterceptor/project.yml ]; then
+            echo "dir=PortInterceptor" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::找不到 project.yml，请把解压后的工程文件传到仓库根目录"
+            exit 1
+          fi
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 工程
+        working-directory: ${{ steps.loc.outputs.dir }}
+        run: xcodegen generate
+
+      - name: 编译未签名 App（Release / 真机 arm64）
+        working-directory: ${{ steps.loc.outputs.dir }}
+        run: |
+          xcodebuild \
+            -project PortInterceptor.xcodeproj \
+            -scheme PortInterceptor \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: 组装 IPA（Payload + 压缩包）
+        working-directory: ${{ steps.loc.outputs.dir }}
+        run: |
+          rm -rf Payload PortInterceptor-unsigned.ipa
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/PortInterceptor.app Payload/
+          zip -qr PortInterceptor-unsigned.ipa Payload
+
+      - name: 上传 IPA 工件
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortInterceptor-unsigned-ipa
+          path: ${{ steps.loc.outputs.dir }}/PortInterceptor-unsigned.ipa
+          retention-days: 30
