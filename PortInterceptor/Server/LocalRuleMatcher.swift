@@ -85,7 +85,7 @@ public final class LocalRuleMatcher: Sendable {
             s = host
         }
         if let colon = s.range(of: ":"), s.contains(".") {
-            let after = s[colon.upperBound:]
+            let after = s[colon.upperBound..<s.endIndex]
             if after.allSatisfy({ $0.isNumber }) {
                 s = String(s[s.startIndex..<colon.lowerBound])
             }
