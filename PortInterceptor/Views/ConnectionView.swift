@@ -164,7 +164,7 @@ struct ConnectionView: View {
             GuideStep(2, "点已连 WiFi 的 ⓘ")
             GuideStep(3, "配置代理 → 手动")
             GuideStep(4, "服务器：127.0.0.1")
-            GuideStep(5, "端口：8888 → 存储")
+            GuideStep(5, "端口：\(proxy.port) → 存储")
             Button {
                 proxy.resetStats()
             } label: {

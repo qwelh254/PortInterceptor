@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  底部三个标签：配置 / 规则 / 连接（液态玻璃）
+//  底部五个标签：配置 / 活动 / 连接 / 统计 / 设置（液态玻璃）
 //
 
 import SwiftUI
@@ -20,10 +20,14 @@ struct ContentView: View {
             TabView {
                 ConfigListView()
                     .tabItem { Label("配置", systemImage: "archivebox.fill") }
-                RuleTestView()
-                    .tabItem { Label("规则", systemImage: "shield.fill") }
+                ActivityView()
+                    .tabItem { Label("活动", systemImage: "waveform.path.ecg") }
                 ConnectionView()
                     .tabItem { Label("连接", systemImage: "bolt.fill") }
+                StatsView()
+                    .tabItem { Label("统计", systemImage: "chart.pie.fill") }
+                SettingsView()
+                    .tabItem { Label("设置", systemImage: "gearshape.fill") }
             }
             .tint(GlassTheme.accent)
         }

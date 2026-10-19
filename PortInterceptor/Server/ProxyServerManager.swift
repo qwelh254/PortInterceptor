@@ -1,7 +1,7 @@
 //
 //  ProxyServerManager.swift
 //  本地代理的启停与状态管理（App 内，无需 Network Extension）
-//  连接页通过它启动/停止 127.0.0.1:8888，并读取统计、切换拦截开关
+//  连接页通过它启动/停止代理，并读取统计、切换拦截开关、设置端口与内置规则
 //
 
 import Foundation
@@ -20,12 +20,17 @@ public final class ProxyServerManager: ObservableObject {
     @Published public var proxied = 0
     /// 拦截开关：false = 直连模式（全部放行）
     @Published public var blockEnabled = false
+    /// 内置大型拦截规则开关（约 11 万域名）
+    @Published public var builtinEnabled = true
+    /// 监听端口
+    @Published public var port: UInt16 = 8888
 
     public static let defaultHost = "127.0.0.1"
     public static let defaultPort: UInt16 = 8888
 
     private var server: LocalProxyServer?
     private let stats = ProxyStats()
+    public let requestLog = RequestLog()
     private var activeConfig: ProxyConfig?
     private var refreshTimer: Timer?
 
@@ -34,16 +39,19 @@ public final class ProxyServerManager: ObservableObject {
     public var isRunning: Bool { state == .running }
 
     public var addressText: String {
-        "\(Self.defaultHost):\(Self.defaultPort)"
+        "\(Self.defaultHost):\(port)"
     }
 
     // MARK: - 启动
     public func start(with config: ProxyConfig) {
         stopInternal(clearStats: false)
-        let matcher = LocalRuleMatcher(config: config, blockEnabled: blockEnabled)
-        let server = LocalProxyServer(port: Self.defaultPort,
+        let matcher = LocalRuleMatcher(config: config,
+                                       blockEnabled: blockEnabled,
+                                       builtinEnabled: builtinEnabled)
+        let server = LocalProxyServer(port: port,
                                       matcher: matcher,
                                       stats: stats,
+                                      log: requestLog,
                                       configName: config.name,
                                       nodeCount: config.nodes.count,
                                       ruleCount: config.rules.count)
@@ -76,13 +84,26 @@ public final class ProxyServerManager: ObservableObject {
     public func setBlockEnabled(_ enabled: Bool) {
         blockEnabled = enabled
         guard let config = activeConfig, let server = server else { return }
-        let matcher = LocalRuleMatcher(config: config, blockEnabled: enabled)
+        let matcher = LocalRuleMatcher(config: config,
+                                       blockEnabled: enabled,
+                                       builtinEnabled: builtinEnabled)
         server.updateMatcher(matcher)
     }
 
-    // MARK: - 统计清零
+    // MARK: - 切换内置规则
+    public func setBuiltinEnabled(_ enabled: Bool) {
+        builtinEnabled = enabled
+        guard let config = activeConfig, let server = server else { return }
+        let matcher = LocalRuleMatcher(config: config,
+                                       blockEnabled: blockEnabled,
+                                       builtinEnabled: enabled)
+        server.updateMatcher(matcher)
+    }
+
+    // MARK: - 统计与日志清零
     public func resetStats() {
         stats.reset()
+        requestLog.reset()
         refresh()
     }
 

@@ -16,6 +16,7 @@ public final class LocalProxyServer: @unchecked Sendable {
     private var listener: NWListener?
     private var matcher: LocalRuleMatcher
     private let stats: ProxyStats
+    private let log: RequestLog
     private let queue = DispatchQueue(label: "com.example.PortInterceptor.localProxy",
                                      attributes: .concurrent)
     private let port: UInt16
@@ -24,12 +25,14 @@ public final class LocalProxyServer: @unchecked Sendable {
     public init(port: UInt16,
                 matcher: LocalRuleMatcher,
                 stats: ProxyStats,
+                log: RequestLog,
                 configName: String,
                 nodeCount: Int,
                 ruleCount: Int) {
         self.port = port
         self.matcher = matcher
         self.stats = stats
+        self.log = log
         self.configInfo = (configName, nodeCount, ruleCount)
     }
 
@@ -95,6 +98,7 @@ public final class LocalProxyServer: @unchecked Sendable {
                                    : "443") ?? .https
         let decision = matcher.decision(for: host)
         stats.record(decision.outcome)
+        log.add(host: host, scheme: "https", outcome: decision.outcome)
 
         switch decision {
         case .blocked:
@@ -133,12 +137,14 @@ public final class LocalProxyServer: @unchecked Sendable {
         // 门户验证：访问验证网址时返回内置「验证成功」页面
         if PortalPage.isVerification(host: cleanedHost) {
             stats.record(.direct)
+            log.add(host: cleanedHost, scheme: "http", outcome: .direct)
             sendPortal(client)
             return
         }
 
         let decision = matcher.decision(for: cleanedHost)
         stats.record(decision.outcome)
+        log.add(host: cleanedHost, scheme: "http", outcome: decision.outcome)
 
         switch decision {
         case .blocked:

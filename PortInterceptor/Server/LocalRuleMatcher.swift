@@ -1,7 +1,7 @@
 //
 //  LocalRuleMatcher.swift
 //  App 内本地代理使用的同步规则匹配器（线程安全，规则快照不可变）
-//  与 RuleEngine 保持一致的判定逻辑，但同步返回，便于在 Network 队列中调用
+//  判定顺序：用户配置规则（含白名单 DIRECT，优先）→ 内置大型拦截列表 → 最终策略
 //
 
 import Foundation
@@ -10,14 +10,18 @@ public final class LocalRuleMatcher: Sendable {
     private let rules: [Rule]
     private let finalPolicy: String
     private let hasNodes: Bool
+    private let blocklist: BlocklistMatcher
     /// 拦截开关：false = 直连模式（不拦截，REJECT 也放行）
     public let blockEnabled: Bool
 
-    public init(config: ProxyConfig, blockEnabled: Bool) {
+    public init(config: ProxyConfig,
+                blockEnabled: Bool,
+                builtinEnabled: Bool) {
         self.rules = config.rules
         self.finalPolicy = config.finalPolicy
         self.hasNodes = !config.nodes.isEmpty
         self.blockEnabled = blockEnabled
+        self.blocklist = BlocklistMatcher(enabled: builtinEnabled)
     }
 
     public enum Decision: Sendable {
@@ -32,6 +36,12 @@ public final class LocalRuleMatcher: Sendable {
             if matches(rule: rule, domain: domain) {
                 policy = rule.policy
                 break
+            }
+        }
+        if policy == nil {
+            // 用户规则未命中：查内置大型拦截列表（需拦截开关 + 内置列表启用）
+            if blockEnabled, blocklist.contains(domain) {
+                return .blocked
             }
         }
         return resolve(policy ?? finalPolicy)
@@ -75,7 +85,7 @@ public final class LocalRuleMatcher: Sendable {
             s = host
         }
         if let colon = s.range(of: ":"), s.contains(".") {
-            let after = s[colon.upperBound...]
+            let after = s[colon.upperBound:]
             if after.allSatisfy({ $0.isNumber }) {
                 s = String(s[s.startIndex..<colon.lowerBound])
             }
