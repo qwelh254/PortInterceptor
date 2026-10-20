@@ -23,7 +23,6 @@ struct ConnectionView: View {
                     blockSwitch
                     portalCard
                     wifiGuide
-                    vpnCard
                     if case .error(let m) = proxy.state {
                         Label(m, systemImage: "exclamationmark.triangle.fill")
                             .font(.footnote).foregroundStyle(GlassTheme.red)

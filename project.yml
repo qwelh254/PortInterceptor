@@ -1,6 +1,6 @@
 name: PortInterceptor
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.worksin
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
@@ -22,35 +22,17 @@ targets:
           - Info.plist
     dependencies:
       - package: Yams
-      - target: PacketTunnel
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.PortInterceptor
-        CODE_SIGN_ENTITLEMENTS: PortInterceptor.entitlements
+        # 与企业描述文件（VD7465CKUB）绑定的 Bundle ID 精确匹配
+        PRODUCT_BUNDLE_IDENTIFIER: com.worksin.one
         INFOPLIST_FILE: PortInterceptor/Info.plist
-        MARKETING_VERSION: "4.1"
+        MARKETING_VERSION: "4.2"
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"
 
-  # MARK: - Packet Tunnel 网络扩展（全局 TUN 拦截）
-  # 仅在开发者账号开通 Network Extension 后可启动；
-  # 最终签名时描述文件必须包含 packet-tunnel-provider 权限
-  PacketTunnel:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: PacketTunnel
-        excludes:
-          - Info.plist
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.PortInterceptor.PacketTunnel
-        CODE_SIGN_ENTITLEMENTS: PacketTunnel/PacketTunnel.entitlements
-        INFOPLIST_FILE: PacketTunnel/Info.plist
-        MARKETING_VERSION: "4.0"
-        CURRENT_PROJECT_VERSION: "1"
-        SWIFT_VERSION: "5.0"
-        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
+# 注：VPN 扩展（PacketTunnel）已从构建中移除——
+# 该描述文件不含 Network Extension 权限，且不包含扩展子 ID，无法签名。
+# 本地 WiFi 代理功能完整保留，是当前证书下唯一可用的拦截方案。
