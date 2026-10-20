@@ -6,6 +6,9 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var store: ConfigStore
+    @EnvironmentObject var proxy: ProxyServerManager
+
     init() {
         // 让 TabBar 透明，露出玻璃背景
         let appearance = UITabBarAppearance()
@@ -30,6 +33,12 @@ struct ContentView: View {
                     .tabItem { Label("设置", systemImage: "gearshape.fill") }
             }
             .tint(GlassTheme.accent)
+        }
+        .onAppear {
+            // 恢复上次运行状态：上次开着就自动启动，上次关闭则保持关闭
+            if let config = store.selected {
+                proxy.restoreIfNeeded(with: config)
+            }
         }
     }
 }

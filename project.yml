@@ -18,6 +18,8 @@ targets:
     platform: iOS
     sources:
       - path: PortInterceptor
+        excludes:
+          - Info.plist
     dependencies:
       - package: Yams
       - target: PacketTunnel
@@ -25,12 +27,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.PortInterceptor
         CODE_SIGN_ENTITLEMENTS: PortInterceptor.entitlements
-        MARKETING_VERSION: "4.0"
+        INFOPLIST_FILE: PortInterceptor/Info.plist
+        MARKETING_VERSION: "4.1"
         CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"

@@ -3,9 +3,12 @@
 //  本地代理的启停与状态管理（App 内，无需 Network Extension）
 //  连接页通过它启动/停止代理，并读取统计、切换拦截开关、设置端口与内置规则
 //
+//  v4.1：设置与运行状态持久化（重启 App / 划掉后台后自动恢复）
+//
 
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 public final class ProxyServerManager: ObservableObject {
@@ -19,14 +22,27 @@ public final class ProxyServerManager: ObservableObject {
     @Published public var direct = 0
     @Published public var proxied = 0
     /// 拦截开关：false = 直连模式（全部放行）
-    @Published public var blockEnabled = false
+    @Published public var blockEnabled = false {
+        didSet { persist() }
+    }
     /// 内置大型拦截规则开关（约 11 万域名）
-    @Published public var builtinEnabled = true
+    @Published public var builtinEnabled = true {
+        didSet { persist() }
+    }
     /// 监听端口
-    @Published public var port: UInt16 = 8888
+    @Published public var port: UInt16 = 8888 {
+        didSet { persist() }
+    }
 
     public static let defaultHost = "127.0.0.1"
     public static let defaultPort: UInt16 = 8888
+
+    private enum UDKey {
+        static let port = "proxy.port"
+        static let blockEnabled = "proxy.blockEnabled"
+        static let builtinEnabled = "proxy.builtinEnabled"
+        static let wasRunning = "proxy.wasRunning"
+    }
 
     private var server: LocalProxyServer?
     private let stats = ProxyStats()
@@ -34,12 +50,29 @@ public final class ProxyServerManager: ObservableObject {
     private var activeConfig: ProxyConfig?
     private var refreshTimer: Timer?
 
-    public init() {}
+    public init() {
+        let ud = UserDefaults.standard
+        if ud.object(forKey: UDKey.port) != nil {
+            let p = ud.integer(forKey: UDKey.port)
+            if (1024...65535).contains(p) { port = UInt16(p) }
+        }
+        if let b = ud.object(forKey: UDKey.blockEnabled) as? Bool { blockEnabled = b }
+        if let b = ud.object(forKey: UDKey.builtinEnabled) as? Bool { builtinEnabled = b }
+        // 进入后台时不被挂起：延长后台执行时间（配合后台模式）
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(enteredBackground),
+            name: UIApplication.didEnterBackgroundNotification, object: nil)
+    }
 
     public var isRunning: Bool { state == .running }
 
     public var addressText: String {
         "\(Self.defaultHost):\(port)"
+    }
+
+    /// 上次是否处于运行状态（用于 App 启动时恢复）
+    public var wasRunning: Bool {
+        UserDefaults.standard.bool(forKey: UDKey.wasRunning)
     }
 
     // MARK: - 启动
@@ -61,8 +94,11 @@ public final class ProxyServerManager: ObservableObject {
             self.activeConfig = config
             self.state = .running
             startTimer()
+            UserDefaults.standard.set(true, forKey: UDKey.wasRunning)
+            KeepAlive.shared.start()
         } catch {
             self.state = .error("本地代理启动失败：\(error.localizedDescription)")
+            UserDefaults.standard.set(false, forKey: UDKey.wasRunning)
         }
     }
 
@@ -70,6 +106,14 @@ public final class ProxyServerManager: ObservableObject {
     public func stop() {
         stopInternal(clearStats: false)
         state = .off
+        UserDefaults.standard.set(false, forKey: UDKey.wasRunning)
+        KeepAlive.shared.stop()
+    }
+
+    /// App 启动后：若上次运行中，自动恢复代理
+    public func restoreIfNeeded(with config: ProxyConfig) {
+        guard wasRunning, !isRunning else { return }
+        start(with: config)
     }
 
     private func stopInternal(clearStats: Bool) {
@@ -100,6 +144,12 @@ public final class ProxyServerManager: ObservableObject {
         server.updateMatcher(matcher)
     }
 
+    // MARK: - 端口修改（保存，下次启动生效）
+    public func setPort(_ newPort: UInt16) {
+        guard (1024...65535).contains(newPort) else { return }
+        port = newPort
+    }
+
     // MARK: - 统计与日志清零
     public func resetStats() {
         stats.reset()
@@ -124,5 +174,17 @@ public final class ProxyServerManager: ObservableObject {
         blocked = s.blocked
         direct = s.direct
         proxied = s.proxied
+    }
+
+    private func persist() {
+        let ud = UserDefaults.standard
+        ud.set(Int(port), forKey: UDKey.port)
+        ud.set(blockEnabled, forKey: UDKey.blockEnabled)
+        ud.set(builtinEnabled, forKey: UDKey.builtinEnabled)
+    }
+
+    @objc private func enteredBackground() {
+        // 进入后台后请求额外的执行时间，尽量保持代理存活
+        KeepAlive.shared.beginBackgroundTask()
     }
 }

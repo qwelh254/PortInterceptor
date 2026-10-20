@@ -40,9 +40,13 @@ public final class LocalProxyServer: @unchecked Sendable {
         let params = NWParameters.tcp
         params.allowLocalEndpointReuse = true
         // 仅绑定到本机回环，避免外部设备连接
+        guard let listenPort = NWEndpoint.Port(rawValue: port) else {
+            throw NSError(domain: "LocalProxyServer", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "监听端口不合法"])
+        }
         params.requiredLocalEndpoint = NWEndpoint.hostPort(
             host: NWEndpoint.Host("127.0.0.1"),
-            port: NWEndpoint.Port(rawValue: port)!)
+            port: listenPort)
         let listener = try NWListener(using: params)
         listener.newConnectionHandler = { [weak self] conn in
             self?.queue.async { self?.handleClient(conn) }
@@ -225,6 +229,9 @@ public final class LocalProxyServer: @unchecked Sendable {
                 to.send(content: data, completion: .contentProcessed { _ in
                     self.relay(from, to: to)
                 })
+            } else if !(complete || error != nil) {
+                // 收到空数据但连接仍在，继续等待，避免连接挂起
+                self.relay(from, to: to)
             }
             if complete || error != nil {
                 from.cancel(); to.cancel()

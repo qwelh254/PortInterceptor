@@ -11,6 +11,7 @@ public final class ConfigStore: ObservableObject {
     @Published public var selectedConfigID: UUID?
 
     private let saveURL: URL
+    private let selectedIDKey = "selectedConfigID"
 
     public init() {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -48,12 +49,22 @@ public final class ConfigStore: ObservableObject {
               let saved = try? JSONDecoder.configDecoder.decode([ProxyConfig].self, from: data)
         else { return }
         configs = saved
-        selectedConfigID = saved.first?.id
+        // 恢复用户上次选中的配置（而非默认第一个）
+        if let idStr = UserDefaults.standard.string(forKey: selectedIDKey),
+           let id = UUID(uuidString: idStr),
+           saved.contains(where: { $0.id == id }) {
+            selectedConfigID = id
+        } else {
+            selectedConfigID = saved.first?.id
+        }
     }
 
     private func save() {
         guard let data = try? JSONEncoder.configEncoder.encode(configs) else { return }
         try? data.write(to: saveURL, options: .atomic)
+        if let id = selectedConfigID {
+            UserDefaults.standard.set(id.uuidString, forKey: selectedIDKey)
+        }
     }
 }
 
