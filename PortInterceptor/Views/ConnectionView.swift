@@ -8,6 +8,7 @@ import SwiftUI
 struct ConnectionView: View {
     @EnvironmentObject var store: ConfigStore
     @EnvironmentObject var proxy: ProxyServerManager
+    @EnvironmentObject var tunnel: TunnelManager
     @Environment(\.openURL) private var openURL
 
     private let verifyURL = URL(string: "http://captive.apple.com/hotspot-detect.html")!
@@ -22,6 +23,7 @@ struct ConnectionView: View {
                     blockSwitch
                     portalCard
                     wifiGuide
+                    vpnCard
                     if case .error(let m) = proxy.state {
                         Label(m, systemImage: "exclamationmark.triangle.fill")
                             .font(.footnote).foregroundStyle(GlassTheme.red)
@@ -177,6 +179,67 @@ struct ConnectionView: View {
         }
         .padding(18)
         .glassCard()
+    }
+
+    // MARK: - 全局 VPN 隧道（NE 测试）
+    private var vpnCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("全局 VPN 隧道（测试证书）", systemImage: "network.badge.shield.half.filled")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(GlassTheme.accent)
+            Text("用于验证企业证书是否开通 Network Extension：点「启动全局隧道」，若弹出系统「添加 VPN 配置」并出现 VPN 图标，即表示该证书的 App ID 支持全局 TUN 拦截；若直接报错，则只能用上方 WiFi 代理模式。")
+                .font(.system(size: 13.5)).foregroundStyle(.white.opacity(0.65))
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(tunnelDot)
+                    .frame(width: 10, height: 10)
+                Text(tunnelText)
+                    .font(.system(size: 14.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
+                Spacer()
+            }
+            Button {
+                if tunnel.state == .on || tunnel.state == .connecting {
+                    tunnel.stop()
+                } else if let config = store.selected {
+                    tunnel.start(config: config)
+                }
+            } label: {
+                Label(tunnel.state == .on || tunnel.state == .connecting ? "停止全局隧道" : "启动全局隧道",
+                      systemImage: "bolt.shield")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(tunnel.state == .on ? GlassTheme.red : GlassTheme.accent)
+            .foregroundStyle(.black)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .disabled(store.configs.isEmpty || tunnel.state == .connecting)
+            if case .error(let m) = tunnel.state {
+                Label(m, systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12.5)).foregroundStyle(GlassTheme.red)
+            }
+        }
+        .padding(18)
+        .glassCard()
+    }
+
+    private var tunnelDot: Color {
+        switch tunnel.state {
+        case .on: return GlassTheme.green
+        case .connecting: return GlassTheme.accent
+        case .error: return GlassTheme.red
+        case .off: return .white.opacity(0.4)
+        }
+    }
+
+    private var tunnelText: String {
+        switch tunnel.state {
+        case .off: return "隧道关闭"
+        case .connecting: return "正在请求系统授权…"
+        case .on: return "全局隧道已连接（VPN 已生效）"
+        case .error(let m): return m
+        }
     }
 
     private var running: Bool { proxy.isRunning }
