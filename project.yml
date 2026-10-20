@@ -43,13 +43,15 @@ targets:
     platform: iOS
     sources:
       - path: PacketTunnel
+        excludes:
+          - Info.plist
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.PortInterceptor.PacketTunnel
         CODE_SIGN_ENTITLEMENTS: PacketTunnel/PacketTunnel.entitlements
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
-        INFOPLIST_KEY_NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
+        INFOPLIST_FILE: PacketTunnel/Info.plist
+        MARKETING_VERSION: "4.0"
+        CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"
         TARGETED_DEVICE_FAMILY: "1,2"
